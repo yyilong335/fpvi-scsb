@@ -92,3 +92,23 @@ Four lekears are present, abusing respectively the following machine clears:
 0x000000000040204d :
 	00001000: 73 (s)
 ```
+
+## Instruction Model
+
+The instruction model is leveraging the similar vulnerability [SCSB](https://github.com/vusec/fpvi-scsb). There could still be two models: injection and leakage.
+
+Injection: 
+
+- The attacker store one instruction to a register/variable, to jump to a function controlled by the attacker (like cache covert channel transmitting secret)
+
+- The victim overwrite the register/variable to jump to a benign function, but through a slow computation
+
+- The victim execute the instruction in the register, but speculatively goto the attacker controlled one
+
+Leakage:
+
+- The victim store one instruction, jump to a function and compute a result
+
+- The attacker renew the instruction with massive computation and call
+
+- The attacker called the stale function and steal result from the victim
