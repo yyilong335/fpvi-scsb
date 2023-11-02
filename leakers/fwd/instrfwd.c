@@ -27,13 +27,16 @@ typedef void (*func_ptr)();
 
 char *secret = "SCSB";
 int idx;
+int g;
 
 void func2() {
+    g += 2;
     asm volatile("nop\n");
     // printf("This is function 2.\n");
 }
 
 void func4() {
+    g += 4;
     asm volatile("nop\n");
     asm volatile("nop\n");
     // printf("This is function 4.\n");
@@ -80,38 +83,44 @@ int main() {
     //                                                      MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE | MAP_HUGETLB, -1, 0);
     // assert(reload_buf != MAP_FAILED);
     // assert(mprotect(&smc_leak, 0x1000, PROT_READ | PROT_WRITE | PROT_EXEC) == 0);
-    for(int j=1; j<=ITER; j++)
+    // for(int i=0;i<20;i++)
     {
-        func1();
-        asm volatile("clflush (%0)\n"::"r"((volatile void *)(&func2)));
-        asm volatile("clflush (%0)\n"::"r"((volatile void *)(&func4)));
-        // func1();
-        
-        h_ptr = func3(j);
-        h_ptr();
+        cnt = 0;
+        for(int j=1; j<=ITER; j++)
+        {
+            /// use this switch to speculatively call func2
+            // func1();
+            asm volatile("clflush (%0)\n"::"r"((volatile void *)(&func2)));
+            asm volatile("clflush (%0)\n"::"r"((volatile void *)(&func4)));
+                        
+            h_ptr = func3(j);
+            h_ptr();
 
-        t1 = rdtscp();
-        func2();
-        t2 = rdtscp();
-        if (t2 - t1 <= THRESHOLD)
-            cnt++;
+            t1 = rdtscp();
+            func2();
+            t2 = rdtscp();
+            if (t2 - t1 <= THRESHOLD)
+                cnt++;
+        }
+
+        // t1 = rdtscp();
+
+        // asm volatile("clflush (%0)\n"::"r"((volatile void *)(&func5)));
+        // t1 = rdtscp();
+        // func5();
+        // t2 = rdtscp();
+        // printf("%ld\n", t2 - t1);
+
+        // sleep(0.01);
+        // t1 = rdtscp();
+        // func5();
+        // t2 = rdtscp();
+        // printf("%ld\n", t2 - t1);
+        // sleep(1);
+        // printf("COUNT = %d\n", cnt);
+        printf("%d\n", cnt);
     }
-
-    t1 = rdtscp();
-
-    asm volatile("clflush (%0)\n"::"r"((volatile void *)(&func5)));
-    t1 = rdtscp();
-    func5();
-    t2 = rdtscp();
-    printf("%ld\n", t2 - t1);
-
-    sleep(0.01);
-    t1 = rdtscp();
-    func5();
-    t2 = rdtscp();
-    printf("%ld\n", t2 - t1);
-
-    printf("COUNT = %d\n", cnt);
+    
 
     return 0;
 }
